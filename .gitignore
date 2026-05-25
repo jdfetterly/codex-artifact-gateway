@@ -1,0 +1,24 @@
+.DS_Store
+
+# Runtime state
+feedback/
+.local/
+.tmp/
+
+# Build output
+dist/
+build/
+
+# Test and coverage output
+coverage/
+coverage.out
+.pytest_cache/
+
+# Editor state
+.idea/
+.vscode/
+
+# Generated screenshots and local demos
+*.png
+*.mov
+*.mp4
