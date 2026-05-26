@@ -1,6 +1,6 @@
 # Security Policy
 
-Codex Mobile HTML Gateway is intended for private local and tailnet-only use.
+Codex Artifact Gateway is intended for private local and tailnet-only use.
 
 ## Supported Boundary
 

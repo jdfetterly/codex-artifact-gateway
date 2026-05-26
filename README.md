@@ -1,8 +1,8 @@
-# Codex Mobile HTML Gateway
+# Codex Artifact Gateway
 
-Codex Mobile HTML Gateway is an unofficial local-first gateway for opening interactive Codex-generated HTML artifacts from an iPhone while the files stay on a Mac.
+Codex Artifact Gateway is an unofficial local-first gateway for opening interactive Codex-generated HTML artifacts from an iPhone while the files stay on a Mac.
 
-The first release is intentionally narrow: macOS host, iPhone client, Tailscale-only access, Codex HTML artifacts, preserved page interactivity, and local feedback capture.
+The first release is intentionally narrow: macOS host, iPhone client, Tailscale-only access, Codex HTML artifacts, preserved page interactivity, local feedback capture, and a Go single-binary implementation.
 
 ## Why This Exists
 
@@ -10,7 +10,7 @@ Codex workflows often produce local HTML review pages. Those pages can include b
 
 ## Current Status
 
-Planning and project setup. No production implementation should be assumed yet.
+Planning and project setup for a Go implementation. No production implementation should be assumed yet.
 
 ## Core Documents
 

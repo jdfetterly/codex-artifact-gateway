@@ -2,7 +2,7 @@
 
 ## Project Purpose
 
-Codex Mobile HTML Gateway lets a macOS-hosted Codex workflow open local HTML artifacts on an iPhone through Tailscale while preserving page interactivity and capturing feedback back on the Mac.
+Codex Artifact Gateway lets a macOS-hosted Codex workflow open local HTML artifacts on an iPhone through Tailscale while preserving page interactivity and capturing feedback back on the Mac.
 
 The project should become an open-source tool, but the first version should solve one concrete problem well: reviewing and responding to Codex-generated HTML pages from iPhone without publishing those files to the public internet.
 
@@ -50,13 +50,7 @@ V0.1 does not support:
 
 ### Implementation Language
 
-Options:
-
-- Go: best fit for a public single-binary CLI/server, Homebrew distribution, and low-friction open-source install.
-- Python: fastest for local validation and readable prototyping, but weaker as a polished install story.
-- Node/TypeScript: familiar web tooling, but heavier dependency surface for a small local daemon.
-
-Recommendation for public project direction: Go, unless a quick Python prototype is explicitly needed first.
+Decision: Go. The public project should target a single-binary CLI/server, Homebrew-ready distribution, and low-friction open-source install.
 
 ### Exposure Model
 
@@ -117,8 +111,8 @@ The first useful release is successful when:
 
 Before publishing publicly:
 
-- Confirm final project name.
-- Confirm implementation language.
+- Use `codex-artifact-gateway` as the project and CLI name unless renamed before release.
+- Keep the implementation in Go.
 - Confirm install story.
 - Add working implementation.
 - Add tests for path allowlists, feedback writes, and HTML serving.

@@ -2,7 +2,7 @@
 
 ## Project Contract
 
-This repository is for Codex Mobile HTML Gateway: an unofficial macOS-to-iPhone, Tailscale-only gateway for opening and interacting with Codex-generated local HTML artifacts.
+This repository is for Codex Artifact Gateway: an unofficial macOS-to-iPhone, Tailscale-only gateway for opening and interacting with Codex-generated local HTML artifacts.
 
 Use `SCOPE_AND_OUTCOMES.md` as the source of truth for product scope. Do not expand this project into generic file hosting, public tunnel infrastructure, multi-user SaaS, non-Codex workflows, or external action dispatch without explicit JD approval.
 
@@ -17,6 +17,7 @@ The immediate goal is a narrow v0.1:
 - Interactive HTML viewing.
 - Local feedback capture.
 - Allowlisted roots.
+- Go implementation.
 
 Assume nothing is already set up unless it exists in this repository.
 
@@ -37,6 +38,7 @@ Assume nothing is already set up unless it exists in this repository.
 - Preserve original HTML files; any feedback UI injection should happen at response time.
 - Store feedback in append-only structured files.
 - Keep dependencies minimal.
+- Prefer Go standard library components unless a dependency removes real complexity.
 - If the public technology direction changes, update `SCOPE_AND_OUTCOMES.md` in the same change.
 - If CLI behavior changes, update `README.md` in the same change.
 
