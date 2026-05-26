@@ -113,9 +113,7 @@ Before publishing publicly:
 
 - Use `codex-artifact-gateway` as the project and CLI name unless renamed before release.
 - Keep the implementation in Go.
-- Confirm install story.
-- Add working implementation.
-- Add tests for path allowlists, feedback writes, and HTML serving.
+- Add packaged install story beyond `go run`.
 - Add clear screenshots or demo artifacts without private data.
 - Review README for open-source clarity.
 - Confirm license and security policy.

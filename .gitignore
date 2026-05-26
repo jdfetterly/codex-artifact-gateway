@@ -8,6 +8,9 @@ feedback/
 # Build output
 dist/
 build/
+bin/
+*.test
+/codex-artifact-gateway
 
 # Test and coverage output
 coverage/

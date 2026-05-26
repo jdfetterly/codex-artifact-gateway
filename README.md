@@ -10,7 +10,70 @@ Codex workflows often produce local HTML review pages. Those pages can include b
 
 ## Current Status
 
-Planning and project setup for a Go implementation. No production implementation should be assumed yet.
+V0.1 local implementation is available. The gateway can be run as a Go command and exposed privately through Tailscale Serve.
+
+## Quick Start
+
+Run from this repository:
+
+```bash
+go run ./cmd/codex-artifact-gateway serve \
+  --root /path/to/codex-artifacts
+```
+
+The gateway binds to `127.0.0.1:8767` by default.
+
+Open locally:
+
+```text
+http://127.0.0.1:8767/recent
+```
+
+Open a specific file:
+
+```text
+http://127.0.0.1:8767/open?path=file:///Users/example/report.html
+```
+
+Use the paste resolver for existing local file links:
+
+```text
+http://127.0.0.1:8767/resolve
+```
+
+## Tailscale Serve
+
+Keep the gateway bound to localhost, then put Tailscale Serve in front of it:
+
+```bash
+tailscale serve --bg http://127.0.0.1:8767
+```
+
+Open the resulting Tailscale URL from the iPhone.
+
+## Feedback Logs
+
+By default, feedback is appended under the current user's app configuration directory:
+
+```text
+~/Library/Application Support/codex-artifact-gateway/feedback/YYYY-MM-DD-feedback.jsonl
+```
+
+Override this with:
+
+```bash
+codex-artifact-gateway serve \
+  --root /path/to/codex-artifacts \
+  --feedback-dir /path/to/feedback
+```
+
+## Development
+
+Run the test suite:
+
+```bash
+go test ./...
+```
 
 ## Core Documents
 
