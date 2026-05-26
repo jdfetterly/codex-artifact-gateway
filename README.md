@@ -10,15 +10,37 @@ Codex workflows often produce local HTML review pages. Those pages can include b
 
 ## Current Status
 
-V0.1 local implementation is available. The gateway can be run as a Go command and exposed privately through Tailscale Serve.
+V0.1 local implementation is available. The gateway can run as a persistent macOS LaunchAgent and expose a private Tailscale URL for iPhone review.
 
 ## Quick Start
 
-Run from this repository:
+Build the binary once from this repository:
 
 ```bash
-go run ./cmd/codex-artifact-gateway serve \
-  --root /path/to/codex-artifacts
+go build ./cmd/codex-artifact-gateway
+```
+
+Install and start the gateway:
+
+```bash
+./codex-artifact-gateway setup \
+  --root /Users/jdfetterly/Documents/Codex
+```
+
+The setup command:
+
+- writes `~/Library/Application Support/codex-artifact-gateway/config.json`
+- installs a user LaunchAgent
+- starts the local gateway on `127.0.0.1:8767`
+- configures Tailscale Serve
+- prints the iPhone `/recent` URL
+
+Check or stop it:
+
+```bash
+./codex-artifact-gateway status
+./codex-artifact-gateway doctor
+./codex-artifact-gateway stop
 ```
 
 The gateway binds to `127.0.0.1:8767` by default.
@@ -43,13 +65,9 @@ http://127.0.0.1:8767/resolve
 
 ## Tailscale Serve
 
-Keep the gateway bound to localhost, then put Tailscale Serve in front of it:
+`setup` and `start` manage Tailscale Serve automatically. The CLI looks for `tailscale` on `PATH`, then falls back to `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
 
-```bash
-tailscale serve --bg http://127.0.0.1:8767
-```
-
-Open the resulting Tailscale URL from the iPhone.
+`stop` disables the managed Tailscale Serve proxy so the tailnet URL does not point at a stale local port.
 
 ## Feedback Logs
 
@@ -68,6 +86,20 @@ codex-artifact-gateway serve \
 ```
 
 ## Development
+
+Manual development server:
+
+```bash
+go run ./cmd/codex-artifact-gateway serve \
+  --root /path/to/codex-artifacts
+```
+
+Serve can also read the saved setup config:
+
+```bash
+./codex-artifact-gateway serve \
+  --config "$HOME/Library/Application Support/codex-artifact-gateway/config.json"
+```
 
 Run the test suite:
 

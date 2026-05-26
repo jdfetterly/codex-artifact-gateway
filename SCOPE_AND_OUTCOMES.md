@@ -30,6 +30,7 @@ V0.1 supports:
 - A generic feedback surface for pages that do not already have a backend.
 - Local feedback capture as structured append-only files.
 - Explicit allowlisted artifact roots.
+- One-command macOS setup using a user LaunchAgent and Tailscale Serve.
 
 ## Out Of Scope For V0.1
 
@@ -43,6 +44,7 @@ V0.1 does not support:
 - Cloud sync, hosted accounts, teams, or multi-tenant access control.
 - Browser extensions.
 - Automatic rewriting of every email or chat link.
+- System-wide root daemon installation.
 - Treating mobile feedback as approval to mutate source files, send messages, merge code, publish content, or trigger external actions.
 - Replacing artifact-specific feedback endpoints when those already exist.
 
@@ -113,7 +115,7 @@ Before publishing publicly:
 
 - Use `codex-artifact-gateway` as the project and CLI name unless renamed before release.
 - Keep the implementation in Go.
-- Add packaged install story beyond `go run`.
+- Add packaged install story beyond local `go build`.
 - Add clear screenshots or demo artifacts without private data.
 - Review README for open-source clarity.
 - Confirm license and security policy.

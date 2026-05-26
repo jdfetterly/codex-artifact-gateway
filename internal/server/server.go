@@ -23,8 +23,9 @@ type Config struct {
 
 func NewHandler(config Config) http.Handler {
 	mux := http.NewServeMux()
-	app := &app{config: config, store: gateway.FeedbackStore{Dir: config.FeedbackDir}}
+	app := &app{config: config, store: gateway.FeedbackStore{Dir: config.FeedbackDir}, startedAt: time.Now()}
 	mux.HandleFunc("/", app.handleHome)
+	mux.HandleFunc("/health", app.handleHealth)
 	mux.HandleFunc("/recent", app.handleRecent)
 	mux.HandleFunc("/resolve", app.handleResolve)
 	mux.HandleFunc("/open", app.handleOpen)
@@ -34,8 +35,9 @@ func NewHandler(config Config) http.Handler {
 }
 
 type app struct {
-	config Config
-	store  gateway.FeedbackStore
+	config    Config
+	store     gateway.FeedbackStore
+	startedAt time.Time
 }
 
 func (a *app) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +46,20 @@ func (a *app) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/recent", http.StatusFound)
+}
+
+func (a *app) handleHealth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":             true,
+		"root_count":     len(a.config.Policy.Roots()),
+		"feedback_dir":   a.config.FeedbackDir,
+		"uptime_seconds": int(time.Since(a.startedAt).Seconds()),
+	})
 }
 
 func (a *app) handleOpen(w http.ResponseWriter, r *http.Request) {
