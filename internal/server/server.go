@@ -196,6 +196,15 @@ func recentItems(policy *gateway.Policy) ([]recentItem, error) {
 				return nil
 			}
 			if entry.IsDir() {
+				if filePath == root.Path {
+					return nil
+				}
+				rel, err := filepath.Rel(root.Path, filePath)
+				if err == nil {
+					if private, _ := gateway.IsPrivateRelativePath(rel); private || entry.Name() == "node_modules" {
+						return filepath.SkipDir
+					}
+				}
 				return nil
 			}
 			if !gateway.IsHTML(filePath) {

@@ -75,6 +75,30 @@ func TestResolveInputRejectsUnsupportedFileTypes(t *testing.T) {
 	}
 }
 
+func TestResolveInputRejectsPrivateHomePathsWhenUsingBroadRoot(t *testing.T) {
+	root := t.TempDir()
+	privateHTML := filepath.Join(root, ".codex", "session.html")
+	libraryHTML := filepath.Join(root, "Library", "Logs", "gateway.html")
+	for _, path := range []string{privateHTML, libraryHTML} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("<html></html>"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	policy, err := NewPolicy([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{privateHTML, libraryHTML} {
+		if _, err := policy.ResolveInput(path); err == nil || !strings.Contains(err.Error(), "private path component") {
+			t.Fatalf("expected private path rejection for %s, got %v", path, err)
+		}
+	}
+}
+
 func TestResolveViewPathRejectsSymlinkComponents(t *testing.T) {
 	root := t.TempDir()
 	outside := t.TempDir()

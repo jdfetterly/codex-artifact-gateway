@@ -24,6 +24,12 @@ func (r *rootFlags) Set(value string) error {
 	return nil
 }
 
+type serveOptions struct {
+	Roots       []string
+	Addr        string
+	FeedbackDir string
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		usage()
@@ -58,37 +64,55 @@ func main() {
 }
 
 func serve(args []string) error {
-	var roots rootFlags
-	defaultFeedbackDir, err := gateway.DefaultFeedbackDir()
+	opts, err := parseServeOptions(args, gateway.DefaultFeedbackDir, config.Read)
 	if err != nil {
 		return err
 	}
-	flags := flag.NewFlagSet("serve", flag.ContinueOnError)
-	flags.Var(&roots, "root", "allowlisted artifact root; repeat for multiple roots")
-	addr := flags.String("addr", "127.0.0.1:8767", "listen address")
-	feedbackDir := flags.String("feedback-dir", defaultFeedbackDir, "feedback log directory")
-	configPath := flags.String("config", "", "path to saved gateway config")
-	if err := flags.Parse(args); err != nil {
-		return err
-	}
-	if *configPath != "" {
-		cfg, err := config.Read(*configPath)
-		if err != nil {
-			return err
-		}
-		roots = cfg.Roots
-		*addr = cfg.Addr
-		*feedbackDir = cfg.FeedbackDir
-	}
-	if len(roots) == 0 {
+	if len(opts.Roots) == 0 {
 		return fmt.Errorf("no roots configured\n\nRun with at least one explicit root:\n  codex-artifact-gateway serve --root /path/to/codex-artifacts")
 	}
-	policy, err := gateway.NewPolicy(roots)
+	policy, err := gateway.NewPolicy(opts.Roots)
 	if err != nil {
 		return err
 	}
-	fmt.Print(server.StartupMessage(*addr, roots, *feedbackDir))
-	return server.Serve(server.Config{Policy: policy, FeedbackDir: *feedbackDir}, *addr)
+	fmt.Print(server.StartupMessage(opts.Addr, opts.Roots, opts.FeedbackDir))
+	return server.Serve(server.Config{Policy: policy, FeedbackDir: opts.FeedbackDir}, opts.Addr)
+}
+
+func parseServeOptions(args []string, defaultFeedbackDir func() (string, error), readConfig func(string) (config.Config, error)) (serveOptions, error) {
+	var roots rootFlags
+	flags := flag.NewFlagSet("serve", flag.ContinueOnError)
+	flags.Var(&roots, "root", "allowlisted artifact root; repeat for multiple roots")
+	addr := flags.String("addr", config.DefaultAddr, "listen address")
+	feedbackDir := flags.String("feedback-dir", "", "feedback log directory")
+	configPath := flags.String("config", "", "path to saved gateway config")
+	if err := flags.Parse(args); err != nil {
+		return serveOptions{}, err
+	}
+	if *configPath != "" {
+		cfg, err := readConfig(*configPath)
+		if err != nil {
+			return serveOptions{}, err
+		}
+		return serveOptions{
+			Roots:       cfg.Roots,
+			Addr:        cfg.Addr,
+			FeedbackDir: cfg.FeedbackDir,
+		}, nil
+	}
+	dir := *feedbackDir
+	if dir == "" {
+		var err error
+		dir, err = defaultFeedbackDir()
+		if err != nil {
+			return serveOptions{}, err
+		}
+	}
+	return serveOptions{
+		Roots:       []string(roots),
+		Addr:        *addr,
+		FeedbackDir: dir,
+	}, nil
 }
 
 func setup(args []string) (string, error) {
@@ -103,9 +127,9 @@ func setup(args []string) (string, error) {
 	if err := flags.Parse(args); err != nil {
 		return "", err
 	}
-	root := config.DefaultRoot(home)
+	setupRoots := []string{config.DefaultRoot(home)}
 	if len(roots) > 0 {
-		root = roots[0]
+		setupRoots = roots
 	}
 	binaryPath, err := app.StableBinaryPath(home)
 	if err != nil {
@@ -120,7 +144,7 @@ func setup(args []string) (string, error) {
 	}
 	return app.Setup(app.SetupOptions{
 		Home:         home,
-		Root:         root,
+		Roots:        setupRoots,
 		BinaryPath:   binaryPath,
 		TailscaleCLI: cliPath,
 	})
@@ -160,7 +184,7 @@ func doctor() (string, error) {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
-	fmt.Fprintln(os.Stderr, "  codex-artifact-gateway setup [--root /path/to/artifacts]")
+	fmt.Fprintln(os.Stderr, "  codex-artifact-gateway setup [--root /path/to/artifacts] [--root /another/root]")
 	fmt.Fprintln(os.Stderr, "  codex-artifact-gateway start|stop|status|doctor")
 	fmt.Fprintln(os.Stderr, "  codex-artifact-gateway serve --root /path/to/artifacts [--root /another/root] [--addr 127.0.0.1:8767]")
 }

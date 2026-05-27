@@ -36,7 +36,7 @@ func TestSetupWritesConfigStartsLaunchAgentTailscaleAndChecksHealth(t *testing.T
 
 	out, err := Setup(SetupOptions{
 		Home:         "/Users/jd",
-		Root:         "/Users/jd/Documents/Codex",
+		Roots:        []string{"/Users/jd/Documents/Codex", "/Users/jd/Reference"},
 		BinaryPath:   "/Users/jd/bin/codex-artifact-gateway",
 		TailscaleCLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
 		Runner:       runner,
@@ -45,7 +45,7 @@ func TestSetupWritesConfigStartsLaunchAgentTailscaleAndChecksHealth(t *testing.T
 		t.Fatal(err)
 	}
 
-	if saved.Roots[0] != "/Users/jd/Documents/Codex" {
+	if strings.Join(saved.Roots, ",") != "/Users/jd/Documents/Codex,/Users/jd/Reference" {
 		t.Fatalf("saved roots = %#v", saved.Roots)
 	}
 	if !strings.Contains(out, "https://example.tail.ts.net/recent") {
@@ -115,7 +115,7 @@ func TestStatusReportsDegradedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"service: not loaded", "health: connection refused", "tailscale: tailscale missing", "serve: serve missing"} {
+	for _, want := range []string{"roots: /Users/jd/Documents/Codex", "service: not loaded", "health: connection refused", "tailscale: tailscale missing", "serve: serve missing"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q:\n%s", want, out)
 		}

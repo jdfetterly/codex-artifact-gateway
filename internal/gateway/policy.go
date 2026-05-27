@@ -120,6 +120,9 @@ func (p *Policy) resolveAbsolute(abs string, forcedRoot *Root) (ResolvedFile, er
 		if rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 			continue
 		}
+		if err := rejectPrivatePath(rel); err != nil {
+			return ResolvedFile{}, err
+		}
 		if err := rejectSymlinkComponents(root.Path, abs); err != nil {
 			return ResolvedFile{}, err
 		}
@@ -160,6 +163,29 @@ func normalizeInputPath(input string) (string, error) {
 		return parsed.Path, nil
 	}
 	return trimmed, nil
+}
+
+func rejectPrivatePath(rel string) error {
+	if private, component := IsPrivateRelativePath(rel); private {
+		return fmt.Errorf("private path component %q is not allowed", component)
+	}
+	return nil
+}
+
+func IsPrivateRelativePath(rel string) (bool, string) {
+	parts := strings.Split(filepath.ToSlash(rel), "/")
+	for i, part := range parts {
+		if part == "" || part == "." {
+			continue
+		}
+		if strings.HasPrefix(part, ".") {
+			return true, part
+		}
+		if i == 0 && part == "Library" {
+			return true, part
+		}
+	}
+	return false, ""
 }
 
 func rejectSymlinkComponents(rootAbs string, abs string) error {

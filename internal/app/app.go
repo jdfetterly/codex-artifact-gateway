@@ -31,6 +31,7 @@ type Runner interface {
 type SetupOptions struct {
 	Home         string
 	Root         string
+	Roots        []string
 	BinaryPath   string
 	TailscaleCLI string
 	Runner       Runner
@@ -56,12 +57,15 @@ func Setup(opts SetupOptions) (string, error) {
 	if runner == nil {
 		runner = SystemRunner{Home: opts.Home}
 	}
-	root := opts.Root
-	if root == "" {
-		root = config.DefaultRoot(opts.Home)
+	roots := opts.Roots
+	if len(roots) == 0 && opts.Root != "" {
+		roots = []string{opts.Root}
+	}
+	if len(roots) == 0 {
+		roots = []string{config.DefaultRoot(opts.Home)}
 	}
 	cfg := config.Default(opts.Home, opts.BinaryPath)
-	cfg.Roots = []string{root}
+	cfg.Roots = roots
 	cfg.TailscaleCLIPath = opts.TailscaleCLI
 	if cfg.TailscaleCLIPath == "" {
 		detected, err := tailscale.DetectCLI(exec.LookPath, tailscale.AppBundleCLI, nil)
@@ -152,6 +156,7 @@ func Status(opts StatusOptions) (string, error) {
 	var builder strings.Builder
 	builder.WriteString("config: " + config.ConfigPath(opts.Home) + "\n")
 	builder.WriteString("addr: " + cfg.Addr + "\n")
+	builder.WriteString("roots: " + strings.Join(cfg.Roots, ", ") + "\n")
 	builder.WriteString("feedback: " + cfg.FeedbackDir + "\n")
 	service, err := runner.LaunchAgentStatus(cfg.LaunchAgentLabel)
 	if err != nil {

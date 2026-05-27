@@ -27,9 +27,26 @@ Install and start the gateway:
   --root /Users/jdfetterly/Documents/Codex
 ```
 
+Repeat `--root` for every local artifact tree the phone should be able to open:
+
+```bash
+./codex-artifact-gateway setup \
+  --root /Users/jdfetterly/Documents/Codex \
+  --root /Users/jdfetterly/Reference
+```
+
+If your Codex artifacts are spread across many project directories, you can allowlist the user folder:
+
+```bash
+./codex-artifact-gateway setup --root /Users/jdfetterly
+```
+
+Broad roots still reject hidden/private path components such as `.codex`, `.ssh`, and top-level `Library`.
+
 The setup command:
 
 - writes `~/Library/Application Support/codex-artifact-gateway/config.json`
+- saves the configured allowlisted roots
 - installs a user LaunchAgent
 - starts the local gateway on `127.0.0.1:8767`
 - configures Tailscale Serve
@@ -71,10 +88,10 @@ http://127.0.0.1:8767/resolve
 
 ## Feedback Logs
 
-By default, feedback is appended under the current user's app configuration directory:
+By default, feedback is appended under the configured feedback directory:
 
 ```text
-~/Library/Application Support/codex-artifact-gateway/feedback/YYYY-MM-DD-feedback.jsonl
+~/Documents/Codex/codex-artifact-gateway-feedback/YYYY-MM-DD-feedback.jsonl
 ```
 
 Override this with:

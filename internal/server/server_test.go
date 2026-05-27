@@ -70,6 +70,13 @@ func TestRecentListsHTMLWithMobileOverflowGuards(t *testing.T) {
 	if err := os.WriteFile(longPage, []byte("<html></html>"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	privatePage := filepath.Join(root, ".codex", "private.html")
+	if err := os.MkdirAll(filepath.Dir(privatePage), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(privatePage, []byte("<html></html>"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	handler := mustHandler(t, root, feedbackDir)
 
 	req := httptest.NewRequest(http.MethodGet, "/recent", nil)
@@ -82,6 +89,9 @@ func TestRecentListsHTMLWithMobileOverflowGuards(t *testing.T) {
 	}
 	if !strings.Contains(body, "agent-<wbr>capability-<wbr>model") {
 		t.Fatal("recent page missing rendered soft breaks for long file names")
+	}
+	if strings.Contains(body, "private.html") {
+		t.Fatal("recent page listed private hidden artifact")
 	}
 	for _, guard := range []string{"overflow-wrap: anywhere", "grid-template-columns: 1fr", "word-break: break-word"} {
 		if !strings.Contains(body, guard) {
