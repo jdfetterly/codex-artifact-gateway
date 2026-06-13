@@ -11,6 +11,7 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [ ] `git status --short --branch` is clean except for intentional launch docs.
 - [ ] `git ls-remote --heads origin main` shows the expected remote branch before assuming GitHub has the current code.
 - [x] No private feedback logs, local configs, screenshots, credentials, tokens, or private runtime state are tracked.
+- [x] Clean-clone serve-only RC smoke passes without running `setup`, LaunchAgent, Tailscale Serve, `git push`, `git tag`, or visibility changes.
 - [ ] Repository owner explicitly approves each externally visible step: commit, push, visibility change, release tag, and public announcement.
 
 ## License
@@ -35,6 +36,16 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] Confirm dependency surface with `go list -m all`; v0.1 should stay standard-library-only unless a dependency removes real complexity.
 - [x] Do not add Tailscale Funnel, public tunnel, reverse proxy, `0.0.0.0`, arbitrary file serving, command execution, or feedback-as-approval behavior.
 
+## RC Validation Evidence
+
+- [x] Commit tested: `a33641f`.
+- [x] Clean clone path: `/private/tmp/codex-artifact-gateway-rc-20260613100237`.
+- [x] Smoke mode: `./codex-artifact-gateway serve --addr 127.0.0.1:8768 --root /private/tmp/codex-artifact-gateway-fixture-20260613100237/artifacts --feedback-dir /private/tmp/codex-artifact-gateway-fixture-20260613100237/feedback`.
+- [x] Verified local endpoints: `/health`, `/recent`, `/open`, `/view`, `/resolve`, `/api/feedback`.
+- [x] Verified rejection cases: outside-root path, `.codex` private path, unsupported `.py`, feedback `.jsonl`, oversized feedback body, and `0.0.0.0` bind.
+- [x] Verified listener: `127.0.0.1:8768` only.
+- [x] Smoke server stopped after validation.
+
 ## Repository Hygiene
 
 - [x] Confirm the built `codex-artifact-gateway` binary is ignored and not tracked.
@@ -47,6 +58,7 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 
 - [x] README accurately describes the narrow v0.1 scope: macOS host, iPhone client, Tailscale-only access, Codex HTML artifacts, local feedback capture, allowlisted roots, and Go binary.
 - [ ] Quick start works from a clean clone.
+- [x] Source-build plus serve-only validation works from a clean clone.
 - [x] Tailscale-only positioning is clear; do not add public tunnel or generic file-hosting instructions.
 - [x] Feedback storage behavior is clear: local append-only JSONL, user input only, not approval for external actions.
 - [x] Public examples use generic paths or clearly marked examples, not private local defaults.
