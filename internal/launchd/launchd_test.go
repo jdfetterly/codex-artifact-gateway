@@ -9,9 +9,9 @@ func TestPlistIncludesStableBinaryConfigLogsAndLabel(t *testing.T) {
 	plist := Plist(Config{
 		Label:      "com.jdfetterly.codex-artifact-gateway",
 		Program:    "/usr/local/bin/codex-artifact-gateway",
-		ConfigPath: "/Users/jd/Library/Application Support/codex-artifact-gateway/config.json",
-		StdoutPath: "/Users/jd/Library/Logs/codex-artifact-gateway.out.log",
-		StderrPath: "/Users/jd/Library/Logs/codex-artifact-gateway.err.log",
+		ConfigPath: "/Users/example/Library/Application Support/codex-artifact-gateway/config.json",
+		StdoutPath: "/Users/example/Library/Logs/codex-artifact-gateway.out.log",
+		StderrPath: "/Users/example/Library/Logs/codex-artifact-gateway.err.log",
 	})
 
 	for _, want := range []string{
@@ -19,11 +19,11 @@ func TestPlistIncludesStableBinaryConfigLogsAndLabel(t *testing.T) {
 		"<string>/usr/local/bin/codex-artifact-gateway</string>",
 		"<string>serve</string>",
 		"<string>--config</string>",
-		"<string>/Users/jd/Library/Application Support/codex-artifact-gateway/config.json</string>",
+		"<string>/Users/example/Library/Application Support/codex-artifact-gateway/config.json</string>",
 		"<key>StandardOutPath</key>",
-		"<string>/Users/jd/Library/Logs/codex-artifact-gateway.out.log</string>",
+		"<string>/Users/example/Library/Logs/codex-artifact-gateway.out.log</string>",
 		"<key>StandardErrorPath</key>",
-		"<string>/Users/jd/Library/Logs/codex-artifact-gateway.err.log</string>",
+		"<string>/Users/example/Library/Logs/codex-artifact-gateway.err.log</string>",
 	} {
 		if !strings.Contains(plist, want) {
 			t.Fatalf("plist missing %q\n%s", want, plist)

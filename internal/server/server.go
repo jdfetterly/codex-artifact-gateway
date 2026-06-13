@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/fs"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,6 +15,11 @@ import (
 	"time"
 
 	"github.com/jdfetterly/codex-artifact-gateway/internal/gateway"
+)
+
+const (
+	maxResolveBodyBytes  = 64 * 1024
+	maxFeedbackBodyBytes = 128 * 1024
 )
 
 type Config struct {
@@ -57,7 +63,6 @@ func (a *app) handleHealth(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"ok":             true,
 		"root_count":     len(a.config.Policy.Roots()),
-		"feedback_dir":   a.config.FeedbackDir,
 		"uptime_seconds": int(time.Since(a.startedAt).Seconds()),
 	})
 }
@@ -80,6 +85,7 @@ func (a *app) handleResolve(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		writeHTML(w, resolvePage(""))
 	case http.MethodPost:
+		r.Body = http.MaxBytesReader(w, r.Body, maxResolveBodyBytes)
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -132,6 +138,7 @@ func (a *app) handleFeedback(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxFeedbackBodyBytes)
 	defer r.Body.Close()
 	var entry gateway.FeedbackEntry
 	if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
@@ -292,9 +299,35 @@ func softBreakHTML(s string) string {
 }
 
 func Serve(config Config, addr string) error {
-	return http.ListenAndServe(addr, NewHandler(config))
+	if err := ValidateListenAddr(addr); err != nil {
+		return err
+	}
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           NewHandler(config),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	return server.ListenAndServe()
 }
 
 func StartupMessage(addr string, roots []string, feedbackDir string) string {
 	return fmt.Sprintf("Codex Artifact Gateway listening on http://%s\nRecent: http://%s/recent\nResolve: http://%s/resolve\nFeedback: %s\nTailscale: tailscale serve --bg http://%s\nRoots: %s\n", addr, addr, addr, feedbackDir, addr, strings.Join(roots, ", "))
+}
+
+func ValidateListenAddr(addr string) error {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("listen address must include a loopback host and port, such as 127.0.0.1:8767: %w", err)
+	}
+	if strings.EqualFold(host, "localhost") {
+		return nil
+	}
+	ip := net.ParseIP(host)
+	if ip != nil && ip.IsLoopback() {
+		return nil
+	}
+	return fmt.Errorf("listen address must be loopback-only; got %q", addr)
 }

@@ -16,9 +16,9 @@ func TestServeOptionsFromConfigDoesNotNeedDefaultFeedbackDir(t *testing.T) {
 			t.Fatalf("config path = %q", path)
 		}
 		return config.Config{
-			Roots:       []string{"/Users/jd"},
+			Roots:       []string{"/Users/example"},
 			Addr:        "127.0.0.1:8767",
-			FeedbackDir: "/Users/jd/feedback",
+			FeedbackDir: "/Users/example/feedback",
 		}, nil
 	}
 
@@ -30,10 +30,10 @@ func TestServeOptionsFromConfigDoesNotNeedDefaultFeedbackDir(t *testing.T) {
 	if opts.Addr != "127.0.0.1:8767" {
 		t.Fatalf("addr = %q", opts.Addr)
 	}
-	if opts.FeedbackDir != "/Users/jd/feedback" {
+	if opts.FeedbackDir != "/Users/example/feedback" {
 		t.Fatalf("feedback dir = %q", opts.FeedbackDir)
 	}
-	if len(opts.Roots) != 1 || opts.Roots[0] != "/Users/jd" {
+	if len(opts.Roots) != 1 || opts.Roots[0] != "/Users/example" {
 		t.Fatalf("roots = %#v", opts.Roots)
 	}
 }

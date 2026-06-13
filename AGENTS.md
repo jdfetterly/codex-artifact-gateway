@@ -4,7 +4,7 @@
 
 This repository is for Codex Artifact Gateway: an unofficial macOS-to-iPhone, Tailscale-only gateway for opening and interacting with Codex-generated local HTML artifacts.
 
-Use `SCOPE_AND_OUTCOMES.md` as the source of truth for product scope. Do not expand this project into generic file hosting, public tunnel infrastructure, multi-user SaaS, non-Codex workflows, or external action dispatch without explicit JD approval.
+Use `SCOPE_AND_OUTCOMES.md` as the source of truth for product scope. Do not expand this project into generic file hosting, public tunnel infrastructure, multi-user SaaS, non-Codex workflows, or external action dispatch without explicit maintainer approval.
 
 ## Current Priority
 
@@ -14,7 +14,7 @@ The immediate goal is a narrow v0.1:
 - iPhone client.
 - Tailscale-only access.
 - Codex-generated HTML artifacts.
-- Interactive HTML viewing.
+- Client-side interactive HTML viewing.
 - Local feedback capture.
 - Allowlisted roots.
 - Go implementation.
@@ -28,6 +28,7 @@ Assume nothing is already set up unless it exists in this repository.
 - Never add public internet exposure by default.
 - Never serve arbitrary home-directory files.
 - Never execute shell commands from HTTP requests.
+- Never proxy arbitrary application APIs or app-specific backend actions.
 - Never treat feedback submissions as approvals to mutate files, publish content, send messages, merge code, or perform external actions.
 - Do not weaken path allowlist checks.
 - Do not follow symlinks or path traversal unless a reviewed design explicitly permits it.
@@ -61,6 +62,6 @@ Before claiming a change is complete:
 
 ## Git Hygiene
 
-- Do not remove or rewrite user-created files unless JD asks.
+- Do not remove or rewrite user-created files unless the repository owner asks.
 - Ignore generated caches, screenshots, local feedback logs, and local runtime state unless they are intentional fixtures.
 - Keep commits focused around one product or implementation decision.

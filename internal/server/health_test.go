@@ -25,8 +25,8 @@ func TestHealthEndpointReturnsJSON(t *testing.T) {
 	if payload["ok"] != true {
 		t.Fatalf("ok = %#v", payload["ok"])
 	}
-	if payload["feedback_dir"] != feedbackDir {
-		t.Fatalf("feedback_dir = %#v", payload["feedback_dir"])
+	if _, ok := payload["feedback_dir"]; ok {
+		t.Fatalf("feedback_dir should not be exposed: %#v", payload["feedback_dir"])
 	}
 	if payload["root_count"].(float64) != 1 {
 		t.Fatalf("root_count = %#v", payload["root_count"])

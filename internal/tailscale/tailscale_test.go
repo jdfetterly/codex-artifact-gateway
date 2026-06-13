@@ -38,11 +38,11 @@ func TestDetectCLIUsesPathThenAppBundle(t *testing.T) {
 func TestServeURLParsesTailnetURL(t *testing.T) {
 	output := `Available within your tailnet:
 
-https://jds-macbook-pro.tail13d577.ts.net/
+https://macbook.example.com/
 |-- proxy http://127.0.0.1:8767
 `
 	got := ParseServeURL(output)
-	if got != "https://jds-macbook-pro.tail13d577.ts.net/" {
+	if got != "https://macbook.example.com/" {
 		t.Fatalf("ParseServeURL = %q", got)
 	}
 }
@@ -54,7 +54,7 @@ func TestClientStartsAndStopsServe(t *testing.T) {
 		Run: func(name string, args ...string) (string, error) {
 			calls = append(calls, name+" "+strings.Join(args, " "))
 			if args[0] == "serve" && args[1] == "--bg" {
-				return "https://example.tail.ts.net/\n|-- proxy http://127.0.0.1:8767", nil
+				return "https://gateway.example.com/\n|-- proxy http://127.0.0.1:8767", nil
 			}
 			return "", nil
 		},
@@ -64,7 +64,7 @@ func TestClientStartsAndStopsServe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if url != "https://example.tail.ts.net/" {
+	if url != "https://gateway.example.com/" {
 		t.Fatalf("StartServe url = %q", url)
 	}
 	if err := client.StopServe(); err != nil {
@@ -83,8 +83,8 @@ func TestClientStartsAndStopsServe(t *testing.T) {
 }
 
 func TestStatusDetectsIPhonePresence(t *testing.T) {
-	status := `100.111.16.45   jds-macbook-pro  jdfetterly@  macOS  -
-100.84.76.13    iphone182        jdfetterly@  iOS    idle, tx 48612 rx 16052`
+	status := `100.111.16.45   macbook   user@example  macOS  -
+100.84.76.13    iphone    user@example  iOS    idle, tx 48612 rx 16052`
 
 	if !HasIPhone(status) {
 		t.Fatal("expected iPhone to be detected")

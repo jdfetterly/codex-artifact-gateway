@@ -2,16 +2,16 @@
 
 ## Project Purpose
 
-Codex Artifact Gateway lets a macOS-hosted Codex workflow open local HTML artifacts on an iPhone through Tailscale while preserving page interactivity and capturing feedback back on the Mac.
+Codex Artifact Gateway lets a macOS-hosted Codex workflow open local HTML artifacts on an iPhone through Tailscale while preserving client-side page interactivity and capturing feedback back on the Mac.
 
-The project should become an open-source tool, but the first version should solve one concrete problem well: reviewing and responding to Codex-generated HTML pages from iPhone without publishing those files to the public internet.
+The project should become an open-source tool, but the first version should solve one concrete problem well: reviewing Codex-generated HTML pages from iPhone without publishing those files to the public internet.
 
 This is an unofficial project and should not imply ownership or endorsement by OpenAI.
 
 ## Initial Audience
 
 - Primary user: a Codex desktop user on macOS who reviews outputs from an iPhone.
-- Primary client: iPhone browser or Codex-related mobile browsing context over Tailscale.
+- Primary client: iPhone browser over Tailscale.
 - Primary artifacts: Codex-generated local HTML files and their local browser assets.
 
 ## V0.1 Scope
@@ -23,10 +23,10 @@ V0.1 supports:
 - Tailscale-only access pattern.
 - Codex-generated HTML artifacts.
 - Universal resolver links for local paths and `file:///Users/...` URLs.
-- Opening links from Codex project chat.
-- Opening links from emails that use the gateway URL.
+- Opening gateway URLs from Codex project chat.
+- Opening gateway URLs from emails or other trusted local workflows.
 - A paste/resolve path for existing local file links.
-- Preserved page interactivity, including JavaScript, buttons, filters, forms, and relative assets.
+- Preserved client-side page interactivity, including JavaScript, buttons, filters, forms, and relative assets that do not depend on a separate application backend.
 - A generic feedback surface for pages that do not already have a backend.
 - Local feedback capture as structured append-only files.
 - Explicit allowlisted artifact roots.
@@ -45,6 +45,7 @@ V0.1 does not support:
 - Browser extensions.
 - Automatic rewriting of every email or chat link.
 - System-wide root daemon installation.
+- Proxying arbitrary application APIs or making backend-dependent controls work outside the app that owns them.
 - Treating mobile feedback as approval to mutate source files, send messages, merge code, publish content, or trigger external actions.
 - Replacing artifact-specific feedback endpoints when those already exist.
 
@@ -52,7 +53,7 @@ V0.1 does not support:
 
 ### Implementation Language
 
-Decision: Go. The public project should target a single-binary CLI/server, Homebrew-ready distribution, and low-friction open-source install.
+Decision: Go. The public project should target a single-binary CLI/server, with future Homebrew packaging as a release goal.
 
 ### Exposure Model
 
@@ -92,6 +93,7 @@ Recommendation for v0.1: injected generic feedback drawer plus preserved existin
 - The gateway should not need to know whether the user is on laptop or iPhone before a link is generated.
 - Resolver URLs should be stable enough to use in Codex chat and email.
 - File access must be explicit and allowlisted.
+- Backend-dependent actions belong to the application that owns that backend, not to the artifact gateway.
 - Feedback writes should be local, inspectable, append-only, and easy for Codex or a human to review later.
 - The original HTML artifact should not be modified just to inject feedback UI.
 - The open-source project should be easy to explain in one sentence and difficult to misuse as a general-purpose public file server.
@@ -103,7 +105,7 @@ The first useful release is successful when:
 1. A Codex-generated local HTML file can be opened from iPhone over Tailscale.
 2. The same resolver link can be used from Codex chat or email.
 3. The rendered page preserves normal HTML behavior and relative assets.
-4. Existing buttons and page controls remain usable from iPhone.
+4. Existing client-side buttons and page controls remain usable from iPhone.
 5. A user can leave feedback from iPhone.
 6. Feedback is stored locally with enough context to identify the artifact, URL, timestamp, browser, and comment.
 7. Requests outside configured roots are rejected.
@@ -115,7 +117,7 @@ Before publishing publicly:
 
 - Use `codex-artifact-gateway` as the project and CLI name unless renamed before release.
 - Keep the implementation in Go.
-- Add packaged install story beyond local `go build`.
+- Add Homebrew installation to the packaging roadmap while keeping `go build` as the initial supported install path until release packaging is ready.
 - Add clear screenshots or demo artifacts without private data.
 - Review README for open-source clarity.
 - Confirm license and security policy.
@@ -130,4 +132,5 @@ Before publishing publicly:
 - Desktop redirect behavior for laptop users.
 - Tailscale identity header awareness.
 - Optional local passcode in addition to tailnet access.
+- Homebrew formula or tap for easier macOS installation after the first public release.
 - Support for non-Codex artifact workflows.

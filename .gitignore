@@ -2,8 +2,12 @@
 
 # Runtime state
 feedback/
+codex-artifact-gateway-feedback/
+*-feedback.jsonl
 .local/
 .tmp/
+.private/
+*.log
 
 # Build output
 dist/

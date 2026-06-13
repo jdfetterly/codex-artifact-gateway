@@ -117,6 +117,20 @@ func TestResolvePageAcceptsPastedPath(t *testing.T) {
 	}
 }
 
+func TestResolvePageRejectsLargeRequestBody(t *testing.T) {
+	root, feedbackDir, _ := fixture(t)
+	handler := mustHandler(t, root, feedbackDir)
+
+	req := httptest.NewRequest(http.MethodPost, "/resolve", strings.NewReader("path="+strings.Repeat("a", maxResolveBodyBytes+1)))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", res.Code, http.StatusBadRequest)
+	}
+}
+
 func TestFeedbackEndpointWritesEntry(t *testing.T) {
 	root, feedbackDir, _ := fixture(t)
 	handler := mustHandler(t, root, feedbackDir)
@@ -151,6 +165,33 @@ func TestFeedbackEndpointWritesEntry(t *testing.T) {
 	}
 	if !strings.Contains(string(content), "Ship it.") || !strings.Contains(string(content), "UnitTest") {
 		t.Fatalf("feedback log missing expected data: %s", string(content))
+	}
+}
+
+func TestFeedbackEndpointRejectsLargeRequestBody(t *testing.T) {
+	root, feedbackDir, _ := fixture(t)
+	handler := mustHandler(t, root, feedbackDir)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/feedback", strings.NewReader(strings.Repeat("a", maxFeedbackBodyBytes+1)))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", res.Code, http.StatusBadRequest)
+	}
+}
+
+func TestValidateListenAddrAllowsOnlyLoopback(t *testing.T) {
+	for _, addr := range []string{"127.0.0.1:8767", "localhost:8767", "[::1]:8767"} {
+		if err := ValidateListenAddr(addr); err != nil {
+			t.Fatalf("ValidateListenAddr(%q) returned error: %v", addr, err)
+		}
+	}
+	for _, addr := range []string{"0.0.0.0:8767", ":8767", "192.168.1.5:8767", "example.com:8767"} {
+		if err := ValidateListenAddr(addr); err == nil {
+			t.Fatalf("ValidateListenAddr(%q) returned nil error", addr)
+		}
 	}
 }
 

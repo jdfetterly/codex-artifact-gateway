@@ -71,6 +71,9 @@ func serve(args []string) error {
 	if len(opts.Roots) == 0 {
 		return fmt.Errorf("no roots configured\n\nRun with at least one explicit root:\n  codex-artifact-gateway serve --root /path/to/codex-artifacts")
 	}
+	if err := server.ValidateListenAddr(opts.Addr); err != nil {
+		return err
+	}
 	policy, err := gateway.NewPolicy(opts.Roots)
 	if err != nil {
 		return err
