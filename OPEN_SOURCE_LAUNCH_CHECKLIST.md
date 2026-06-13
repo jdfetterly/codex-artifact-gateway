@@ -57,7 +57,7 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 ## Documentation
 
 - [x] README accurately describes the narrow v0.1 scope: macOS host, iPhone client, Tailscale-only access, Codex HTML artifacts, local feedback capture, allowlisted roots, and Go binary.
-- [ ] Quick start works from a clean clone.
+- [x] Quick Start `setup` works from a built binary in a logged-in macOS GUI session.
 - [x] Source-build plus serve-only validation works from a clean clone.
 - [x] Tailscale-only positioning is clear; do not add public tunnel or generic file-hosting instructions.
 - [x] Feedback storage behavior is clear: local append-only JSONL, user input only, not approval for external actions.
@@ -84,6 +84,13 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [ ] Plan a simple version tag such as `v0.1.0`.
 - [ ] Draft short release notes covering purpose, supported setup, limitations, and security boundary.
 - [x] Avoid promising Homebrew until packaging exists and has been tested.
+
+## Full Setup Validation Evidence
+
+- [x] Mac mini SSH/headless full-setup attempt was restored cleanly after launchd bootstrap failure; no Gateway service or Tailscale Serve state was left behind.
+- [x] Logged-in MacBook Pro GUI-session full setup validated `setup`, `status`, `doctor`, LaunchAgent load, loopback listener, Tailscale Serve tailnet route, `/health`, `/recent`, `/open`, `/view`, `/resolve`, and `/api/feedback`.
+- [x] Full setup validation rejected outside-root paths, hidden/private `.codex` paths, unsupported extensions, feedback JSONL files, oversized feedback bodies, and `0.0.0.0` bind attempts.
+- [x] Full setup validation stopped Gateway afterward and verified no loopback listener, no loaded LaunchAgent service, and no active Tailscale Serve config remained.
 
 ## Publish Steps
 
