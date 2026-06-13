@@ -45,6 +45,33 @@ func TestOpenRedirectsToViewAndViewServesInjectedHTML(t *testing.T) {
 	}
 }
 
+func TestHomePageLinksToBeginnerActions(t *testing.T) {
+	root, feedbackDir, _ := fixture(t)
+	handler := mustHandler(t, root, feedbackDir)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", res.Code, http.StatusOK)
+	}
+	body := res.Body.String()
+	for _, want := range []string{
+		"Browse recent HTML files",
+		`href="/recent"`,
+		"Paste a file path",
+		`href="/resolve"`,
+		"Check Gateway health",
+		`href="/health"`,
+		"Gateway opens HTML files from the folders you allowed during setup.",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("home page missing %q:\n%s", want, body)
+		}
+	}
+}
+
 func TestViewServesRelativeAssets(t *testing.T) {
 	root, feedbackDir, _ := fixture(t)
 	handler := mustHandler(t, root, feedbackDir)

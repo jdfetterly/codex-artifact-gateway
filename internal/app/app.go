@@ -93,9 +93,9 @@ func Setup(opts SetupOptions) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		url = strings.TrimRight(serveURL, "/") + "/recent"
+		url = baseURL(serveURL)
 	}
-	return fmt.Sprintf("setup complete\nrecent: %s\nconfig: %s\nfeedback: %s\n", url, configPath, cfg.FeedbackDir), nil
+	return setupMessage(url, cfg, configPath), nil
 }
 
 func Start(opts StartOptions) (string, error) {
@@ -119,9 +119,9 @@ func Start(opts StartOptions) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		url = strings.TrimRight(serveURL, "/") + "/recent"
+		url = baseURL(serveURL)
 	}
-	return fmt.Sprintf("started\nrecent: %s\n", url), nil
+	return fmt.Sprintf("Gateway started.\n\nOpen this on your iPhone:\n%s\n", url), nil
 }
 
 func Stop(opts StopOptions) (string, error) {
@@ -151,43 +151,66 @@ func Status(opts StatusOptions) (string, error) {
 	}
 	cfg, err := runner.ReadConfig(config.ConfigPath(opts.Home))
 	if err != nil {
-		return fmt.Sprintf("config: %v\nrepair: codex-artifact-gateway setup --root %s\n", err, config.DefaultRoot(opts.Home)), nil
+		return fmt.Sprintf("Gateway is not set up yet.\n\nRun:\n  ./codex-artifact-gateway setup --root %s\n\nDetails:\n  %v\n", config.DefaultRoot(opts.Home), err), nil
 	}
 	var builder strings.Builder
-	builder.WriteString("config: " + config.ConfigPath(opts.Home) + "\n")
-	builder.WriteString("addr: " + cfg.Addr + "\n")
-	builder.WriteString("roots: " + strings.Join(cfg.Roots, ", ") + "\n")
-	builder.WriteString("feedback: " + cfg.FeedbackDir + "\n")
 	service, err := runner.LaunchAgentStatus(cfg.LaunchAgentLabel)
 	if err != nil {
 		service = err.Error()
 	}
-	builder.WriteString("service: " + service + "\n")
-	if err := runner.CheckHealth(cfg.Addr); err != nil {
-		builder.WriteString("health: " + err.Error() + "\n")
-	} else {
-		builder.WriteString("health: ok\n")
-	}
+	builder.WriteString("Gateway status\n\n")
+	builder.WriteString("Phone URL:\n")
+	serveURL := ""
 	tailscalePath := cfg.TailscaleCLIPath
 	if tailscalePath == "" {
 		tailscalePath = tailscale.AppBundleCLI
 	}
-	status, err := runner.TailscaleStatus(tailscalePath)
-	if err != nil {
-		builder.WriteString("tailscale: " + err.Error() + "\n")
-	} else {
-		builder.WriteString("tailscale: ok\n")
-		if tailscale.HasIPhone(status) {
-			builder.WriteString("iphone: visible on tailnet\n")
-		}
+	serveStatus, serveErr := runner.TailscaleServeStatus(tailscalePath)
+	if serveErr == nil {
+		serveURL = baseURL(tailscale.ParseServeURL(serveStatus))
 	}
-	serveStatus, err := runner.TailscaleServeStatus(tailscalePath)
-	if err != nil {
-		builder.WriteString("serve: " + err.Error() + "\n")
-	} else if serveURL := tailscale.ParseServeURL(serveStatus); serveURL != "" {
-		builder.WriteString("serve: " + strings.TrimRight(serveURL, "/") + "/recent\n")
+	if serveURL == "" {
+		builder.WriteString("Not available yet. Run setup or check Tailscale Serve.\n\n")
 	} else {
-		builder.WriteString("serve: not configured\n")
+		builder.WriteString(serveURL + "\n\n")
+	}
+	builder.WriteString("Gateway can open HTML files from these folders and their subfolders:\n")
+	builder.WriteString(formatRoots(cfg.Roots))
+	builder.WriteString("\n")
+	builder.WriteString("Local check:\n")
+	if err := runner.CheckHealth(cfg.Addr); err != nil {
+		builder.WriteString("Gateway is not running at http://" + cfg.Addr + ".\n")
+		builder.WriteString("Run:\n  ./codex-artifact-gateway setup --root " + firstRootOrDefault(cfg.Roots, opts.Home) + "\n\n")
+	} else {
+		builder.WriteString("http://" + cfg.Addr + " is working on this Mac.\n\n")
+	}
+	builder.WriteString("Tailscale check:\n")
+	_, err = runner.TailscaleStatus(tailscalePath)
+	if err != nil {
+		builder.WriteString("Tailscale check failed: " + err.Error() + "\n\n")
+	} else if serveURL != "" {
+		builder.WriteString("Your private phone URL is connected through Tailscale Serve.\n\n")
+	} else {
+		builder.WriteString("Tailscale is running on this Mac, but Gateway does not have a phone URL yet.\n\n")
+	}
+	builder.WriteString("Install location:\n")
+	builder.WriteString(cfg.BinaryPath + "\n")
+	if warning := unstableInstallWarning(cfg.BinaryPath); warning != "" {
+		builder.WriteString("\n" + warning + "\n")
+	}
+	builder.WriteString("\nFeedback is saved here:\n")
+	builder.WriteString(cfg.FeedbackDir + "\n\n")
+	builder.WriteString("Config file:\n")
+	builder.WriteString(config.ConfigPath(opts.Home) + "\n\n")
+	builder.WriteString("Service:\n")
+	builder.WriteString(service + "\n\n")
+	builder.WriteString("Tailscale Serve:\n")
+	if serveErr != nil {
+		builder.WriteString(serveErr.Error() + "\n")
+	} else if serveURL != "" {
+		builder.WriteString(serveURL + "\n")
+	} else {
+		builder.WriteString("not configured\n")
 	}
 	return builder.String(), nil
 }
@@ -197,7 +220,78 @@ func Doctor(opts StatusOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return status + "repair commands:\n  codex-artifact-gateway setup --root " + config.DefaultRoot(opts.Home) + "\n  codex-artifact-gateway status\n", nil
+	return status + "\nIf you do not see your file on the phone:\n- Make sure it is an .html file.\n- Make sure it is inside one of the folders listed above.\n- Open the phone URL and choose \"Paste a file path\" if it does not appear in recent files.\n\nUseful commands:\n  ./codex-artifact-gateway setup --root " + config.DefaultRoot(opts.Home) + "\n  ./codex-artifact-gateway status\n", nil
+}
+
+func setupMessage(phoneURL string, cfg config.Config, configPath string) string {
+	var builder strings.Builder
+	builder.WriteString("Setup complete.\n\n")
+	if phoneURL != "" {
+		builder.WriteString("Open this on your iPhone:\n")
+		builder.WriteString(phoneURL + "\n\n")
+	}
+	builder.WriteString("Gateway can open HTML files from these folders and their subfolders:\n")
+	builder.WriteString(formatRoots(cfg.Roots))
+	builder.WriteString("\n")
+	builder.WriteString("Gateway was installed from:\n")
+	builder.WriteString(cfg.BinaryPath + "\n")
+	if warning := unstableInstallWarning(cfg.BinaryPath); warning != "" {
+		builder.WriteString("\n" + warning + "\n")
+	}
+	builder.WriteString("\nDo not move or delete the install folder unless you run setup again.\n\n")
+	builder.WriteString("Useful commands:\n")
+	builder.WriteString("  ./codex-artifact-gateway status\n")
+	builder.WriteString("  ./codex-artifact-gateway doctor\n")
+	builder.WriteString("  ./codex-artifact-gateway stop\n\n")
+	builder.WriteString("Config file:\n")
+	builder.WriteString(configPath + "\n\n")
+	builder.WriteString("Feedback is saved here:\n")
+	builder.WriteString(cfg.FeedbackDir + "\n")
+	return builder.String()
+}
+
+func baseURL(raw string) string {
+	if strings.TrimSpace(raw) == "" {
+		return ""
+	}
+	return strings.TrimRight(strings.TrimSpace(raw), "/") + "/"
+}
+
+func formatRoots(roots []string) string {
+	if len(roots) == 0 {
+		return "- none configured\n"
+	}
+	var builder strings.Builder
+	for _, root := range roots {
+		builder.WriteString("- " + root + "\n")
+	}
+	return builder.String()
+}
+
+func firstRootOrDefault(roots []string, home string) string {
+	if len(roots) > 0 {
+		return roots[0]
+	}
+	return config.DefaultRoot(home)
+}
+
+func unstableInstallWarning(binaryPath string) string {
+	if binaryPath == "" {
+		return ""
+	}
+	clean := filepath.Clean(binaryPath)
+	parts := strings.Split(clean, string(os.PathSeparator))
+	underNamedDir := false
+	for _, part := range parts {
+		if part == "Downloads" || part == ".Trash" || part == "Trash" {
+			underNamedDir = true
+			break
+		}
+	}
+	if !strings.HasPrefix(clean, "/tmp/") && !strings.HasPrefix(clean, "/private/tmp/") && !underNamedDir {
+		return ""
+	}
+	return "Warning: Gateway is installed from a folder that may be moved or deleted.\nIf this file moves, the background service will stop working.\nInstall from a stable folder such as ~/Developer/codex-artifact-gateway."
 }
 
 type SystemRunner struct {

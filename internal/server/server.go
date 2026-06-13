@@ -51,7 +51,11 @@ func (a *app) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	http.Redirect(w, r, "/recent", http.StatusFound)
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	writeHTML(w, homePage())
 }
 
 func (a *app) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -261,14 +265,32 @@ func resolvePage(message string) string {
 	return builder.String()
 }
 
+func homePage() string {
+	var builder strings.Builder
+	builder.WriteString(pageStart("Codex Artifact Gateway"))
+	builder.WriteString(`<main><header><h1>Codex Artifact Gateway</h1><p class="lead">Gateway opens HTML files from the folders you allowed during setup. Choose recent files, or paste a local Mac path or file:/// link.</p></header>`)
+	builder.WriteString(`<section class="actions">`)
+	builder.WriteString(`<a class="action" href="/recent"><strong>Browse recent HTML files</strong><span>Open HTML files Gateway found in your allowed folders.</span></a>`)
+	builder.WriteString(`<a class="action" href="/resolve"><strong>Paste a file path</strong><span>Use a local Mac path or file:/// link that you already have.</span></a>`)
+	builder.WriteString(`<a class="action" href="/health"><strong>Check Gateway health</strong><span>Confirm the local Gateway service is running.</span></a>`)
+	builder.WriteString(`</section></main>`)
+	builder.WriteString(pageEnd())
+	return builder.String()
+}
+
 func pageStart(title string) string {
 	return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>` + template.HTMLEscapeString(title) + `</title><style>
 body{margin:0;background:#f7f8fb;color:#14161a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
 main{width:min(920px,100%);box-sizing:border-box;margin:0 auto;padding:18px;display:grid;gap:16px}
 header{display:grid;grid-template-columns: 1fr;gap:10px;align-items:start}
 h1{font-size:28px;line-height:1.1;margin:0;overflow-wrap: anywhere;word-break: break-word}
+.lead{font-size:16px;line-height:1.45;color:#4b5563;margin:0;overflow-wrap:anywhere;word-break:break-word}
 a{color:inherit}
 .secondary{font-size:15px;color:#335c96}
+.actions{display:grid;grid-template-columns:1fr;gap:10px}
+.action{display:grid;gap:6px;padding:16px;border:1px solid #dde1ea;border-radius:8px;background:#fff;text-decoration:none;overflow-wrap:anywhere;word-break:break-word}
+.action strong{font-size:17px}
+.action span{font-size:14px;color:#5c6472;line-height:1.35}
 .list{display:grid;grid-template-columns: 1fr;gap:10px}
 .item{display:grid;gap:5px;padding:14px;border:1px solid #dde1ea;border-radius:8px;background:#fff;text-decoration:none;overflow-wrap: anywhere;word-break: break-word}
 .item strong{font-size:16px}
@@ -309,6 +331,7 @@ func Serve(config Config, addr string) error {
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    16 * 1024,
 	}
 	return server.ListenAndServe()
 }

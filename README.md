@@ -1,36 +1,69 @@
+<p align="center">
+  <img src="docs/assets/readme-hero.svg" alt="Codex Artifact Gateway connects local Codex HTML artifacts on a Mac to an iPhone over Tailscale" width="100%">
+</p>
+
 # Codex Artifact Gateway
 
-Open local Codex-generated HTML artifacts from an iPhone or iPad over your private Tailscale network without publishing them to the public internet.
+Open local Codex-generated HTML artifacts on your iPhone or iPad without uploading them to the public internet.
 
-Codex Artifact Gateway is an unofficial, local-first macOS utility for reviewing local HTML artifacts on trusted mobile devices. It runs on your Mac, serves only explicitly allowlisted artifact roots, and is designed for localhost plus Tailscale Serve.
+Codex Artifact Gateway is a small macOS utility for a very specific workflow: Codex makes a useful local HTML artifact, and you want to review it from a trusted mobile device while it stays on your Mac. Gateway runs locally, serves only the folders you allowlist, and uses Tailscale Serve so the review URL is available on your private tailnet.
 
-This is not an OpenAI product and does not imply OpenAI ownership or endorsement.
+This project is unofficial. It is not an OpenAI product and does not imply OpenAI ownership or endorsement.
+
+## Why I Built This
+
+Codex is very good at producing local HTML review surfaces: dashboards, reports, prototypes, comparison pages, and feedback workbenches. Those files are useful, but the moment you want to review one from your phone, the normal `file:///Users/...` link stops working.
+
+The boring solution is to upload the artifact somewhere. I do not want that to be the default.
+
+Gateway keeps the artifact where it belongs: on the Mac that produced it. It gives trusted devices on your tailnet a private way to open the page, keep the page's client-side interactivity, and optionally leave feedback that is saved locally.
 
 ## What It Does
 
-- Opens local Codex-generated HTML files from trusted mobile browsers.
-- Resolves local paths and `file:///Users/...` URLs into private review links.
-- Preserves client-side HTML behavior such as JavaScript, filters, tabs, charts, forms, and relative assets.
-- Adds an optional generic feedback drawer at response time without modifying the original HTML file.
-- Stores feedback locally as append-only JSONL on the Mac.
+- Opens local Codex-generated HTML files from an iPhone, iPad, or trusted browser on your tailnet.
+- Finds recent HTML artifacts under allowlisted roots.
+- Resolves local paths and `file:///Users/...` URLs into private `/view/...` links.
+- Preserves client-side behavior already in the page, including JavaScript, filters, tabs, charts, forms, and relative assets.
+- Adds a lightweight feedback drawer at response time without modifying the original HTML file.
+- Saves feedback locally as append-only JSONL on the Mac.
 - Installs as a user-level macOS LaunchAgent and configures Tailscale Serve.
-- Rejects requests outside configured roots and blocks private path components such as `.codex`, `.ssh`, and top-level `Library`.
+- Rejects files outside configured roots and blocks private path components such as `.codex`, `.ssh`, and top-level `Library`.
 
-## Why This Exists
+## What It Is Not
 
-Codex workflows often produce useful local HTML review pages, but a `file:///Users/...` link from a Mac cannot be opened directly from an iPhone. Uploading those artifacts to a public host just to review them is usually the wrong tradeoff.
+Gateway is intentionally narrow. It is not a public file host, a whole-home-directory file server, a SaaS product, a reverse proxy for arbitrary app APIs, or an approval system for publishing, sending, merging, or mutating external systems.
 
-Gateway gives you a private resolver URL for trusted devices on your tailnet while keeping the files on your Mac.
+If a page depends on a separate backend API to save state or perform app-specific actions, serve that page through the app that owns that backend. Gateway is for private artifact viewing and local feedback capture.
+
+## The Two Folders To Understand
+
+Gateway has two different folders in the setup flow:
+
+| Folder | What it means | Example |
+| --- | --- | --- |
+| Install location | Where this repo and the built `codex-artifact-gateway` binary live. Do not move or delete it unless you run setup again. | `~/Developer/codex-artifact-gateway` |
+| Artifact root | A folder containing HTML files Gateway is allowed to open on your phone. Subfolders are included. | `~/Documents/Codex` |
+
+Install Gateway somewhere stable, not in Downloads, Trash, `/tmp`, or a throwaway scratch folder. The macOS background service remembers the exact binary path from setup.
+
+## How Pages Get To The Phone
+
+Once Gateway is set up, there are three practical ways to open an artifact:
+
+1. Open the phone URL printed by setup, then choose **Browse recent HTML files**.
+2. Choose **Paste a file path**, paste a local path or `file:///` URL, and Gateway redirects to the private viewer URL.
+3. Use an `/open?path=...` link when another tool already knows the local file path.
+
+Gateway does not automatically rewrite every old `file:///...` link that already exists in chats, emails, notes, or generated pages. It provides the resolver that makes those paths usable from the phone. Future tools can generate Gateway `/open?path=...` links directly, but existing plain file links still need to go through `/resolve` or be converted by the tool that emits them.
 
 ## How It Works
 
-1. Build and run Gateway on your Mac.
-2. Allowlist the local directories that contain Codex-generated HTML artifacts.
-3. Gateway serves those artifacts on `127.0.0.1:8767`.
-4. Tailscale Serve exposes that local port only to trusted devices on your tailnet.
-5. Open `/recent`, `/resolve`, or a generated `/open?...` link from your iPhone or iPad.
-
-Backend-dependent pages should stay with the app that owns the backend. Gateway preserves client-side page behavior and captures local feedback; it does not proxy unrelated application APIs or make app-specific action buttons work from a static artifact URL.
+1. Install Gateway in a stable folder on your Mac.
+2. Run `setup` with one or more artifact roots you are comfortable exposing to trusted tailnet devices.
+3. Gateway starts a local server on `127.0.0.1:8767`.
+4. Tailscale Serve exposes that local server to your tailnet.
+5. Setup prints the private phone URL to open.
+6. Feedback, if submitted, is appended to a local JSONL file.
 
 ## Support Matrix
 
@@ -45,34 +78,6 @@ Backend-dependent pages should stay with the app that owns the backend. Gateway 
 | Public internet | Not supported |
 | Backend API proxying | Not supported |
 
-## Security Model
-
-Gateway is private by default:
-
-- The local server binds to `127.0.0.1:8767`.
-- Mobile access is intended to go through Tailscale Serve to trusted tailnet devices.
-- Artifact roots must be explicitly allowlisted.
-- Private path components are rejected even when a broad root is configured.
-- Feedback is treated as untrusted user input.
-- The gateway should run as your logged-in macOS user, not with `sudo`.
-
-Do not expose Gateway with Tailscale Funnel, public tunnels, reverse proxies, public interfaces such as `0.0.0.0`, or generic file-hosting infrastructure.
-
-Anyone who can access the tailnet URL should be treated as able to view supported files under the configured allowlisted roots. Tailnet access is not per-file authorization.
-
-## What It Is Not
-
-Gateway is intentionally narrow. It is not:
-
-- A public file host.
-- A generic whole-home-directory file server.
-- A multi-user SaaS product.
-- A reverse proxy for arbitrary application APIs.
-- A privileged daemon.
-- An approval system for publishing, sending, merging, or mutating external systems.
-
-If an HTML page depends on a separate backend API to save state or perform app-specific actions, serve that page through the app that owns the backend. Gateway is for private artifact viewing and local feedback capture, not for making unrelated application backends available.
-
 ## Quick Start
 
 Prerequisites:
@@ -80,22 +85,26 @@ Prerequisites:
 - macOS.
 - Go 1.22 or newer.
 - Tailscale installed and signed in on the Mac.
-- An iPhone, iPad, or other trusted device on the same tailnet.
+- Tailscale installed and signed in on the iPhone, iPad, or trusted device you want to use.
 
-Build the binary from this repository:
+Clone this repo into a stable folder and build the binary:
 
 ```bash
+mkdir -p "$HOME/Developer"
+cd "$HOME/Developer"
+git clone https://github.com/jdfetterly/codex-artifact-gateway.git
+cd codex-artifact-gateway
 go build ./cmd/codex-artifact-gateway
 ```
 
-Install and start the gateway as your logged-in macOS user:
+Install and start Gateway as your logged-in macOS user:
 
 ```bash
 ./codex-artifact-gateway setup \
   --root "$HOME/Documents/Codex"
 ```
 
-Prefer narrow artifact roots. Repeat `--root` for every local artifact tree the phone should be able to open:
+Prefer narrow artifact roots. Repeat `--root` for each local artifact tree the phone should be able to open:
 
 ```bash
 ./codex-artifact-gateway setup \
@@ -112,9 +121,11 @@ The setup command:
 - installs a user LaunchAgent
 - starts the local gateway on `127.0.0.1:8767`
 - configures Tailscale Serve
-- prints the mobile `/recent` URL
+- prints the private phone URL to open
 
-Check or stop the gateway:
+Gateway uses local port `8767`. If another app is already using `127.0.0.1:8767`, setup will not be able to start the local service.
+
+Check or stop Gateway:
 
 ```bash
 ./codex-artifact-gateway status
@@ -127,8 +138,9 @@ Check or stop the gateway:
 First-run check:
 
 1. Run `./codex-artifact-gateway doctor`.
-2. Open `http://127.0.0.1:8767/recent` on the Mac.
-3. Open the printed Tailscale `/recent` URL from the phone.
+2. Open `http://127.0.0.1:8767/` on the Mac.
+3. Open the printed Tailscale URL from the phone.
+4. Choose **Browse recent HTML files** or **Paste a file path**.
 
 ## Common Workflows
 
@@ -136,6 +148,12 @@ Open recent artifacts locally:
 
 ```text
 http://127.0.0.1:8767/recent
+```
+
+Open the local Gateway home page:
+
+```text
+http://127.0.0.1:8767/
 ```
 
 Open a specific local HTML file:
@@ -182,11 +200,60 @@ Override this with:
 
 Feedback may contain user-controlled text, URLs, browser metadata, and artifact references. Do not put secrets, credentials, private paths, or instructions for external actions in feedback, and escape or sanitize feedback before displaying it in another tool.
 
+## Security Model
+
+Gateway is private by default:
+
+- The local server binds to `127.0.0.1:8767`.
+- Mobile access is intended to go through Tailscale Serve to trusted tailnet devices.
+- Artifact roots must be explicitly allowlisted.
+- Private path components are rejected even when a broad root is configured.
+- Feedback is treated as untrusted user input.
+- Gateway should run as your logged-in macOS user, not with `sudo`.
+
+Do not expose Gateway with Tailscale Funnel, public tunnels, reverse proxies, public interfaces such as `0.0.0.0`, or generic file-hosting infrastructure.
+
+Anyone who can access the tailnet URL should be treated as able to view supported files under the configured allowlisted roots. Tailnet access is not per-file authorization.
+
 ## Project Status
 
-The current implementation supports the first public milestone: a macOS host, iPhone/iPad browser review over Tailscale, Codex-generated HTML artifacts, local feedback capture, explicit allowlisted roots, and a Go single-binary build from source.
+The current implementation supports the first public milestone: macOS host, iPhone/iPad browser review over Tailscale, Codex-generated HTML artifacts, local feedback capture, explicit allowlisted roots, and a Go single-binary build from source.
 
 Release packaging is intentionally minimal for the initial launch. Future packaging may include Homebrew after the source-build path has been validated from a clean checkout.
+
+## Contributing
+
+Contributions are welcome, especially fixes that make Gateway easier to install, safer to run, or clearer for people reviewing local Codex artifacts from a phone.
+
+This project is intentionally narrow. Before opening a large PR, please check that the change fits the current scope:
+
+- macOS host.
+- iPhone/iPad or trusted browser client.
+- Tailscale-only private access.
+- Codex-generated local HTML artifacts.
+- Local feedback capture.
+- Explicit allowlisted roots.
+- Go standard library first.
+
+Please do not send PRs that turn Gateway into public hosting, generic file sharing, a SaaS service, a broad tunnel manager, an arbitrary reverse proxy, or a system that treats feedback as approval to mutate files or call external services.
+
+### Submitting PRs
+
+For a smooth review:
+
+1. Open an issue first for large features, security-sensitive changes, or anything that changes the project scope.
+2. Keep PRs focused. One behavior change is easier to review than a bundle of unrelated cleanup.
+3. Include a short explanation of the user problem, the change, and how you tested it.
+4. Add or update tests for path policy, server behavior, setup/status output, or feedback handling when those areas change.
+5. Run the standard checks before submitting:
+
+```bash
+go test ./...
+go vet ./...
+git diff --check
+```
+
+Security-sensitive reports should follow [SECURITY.md](SECURITY.md), not a public issue or PR.
 
 ## Development
 
