@@ -8,8 +8,8 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] `go test ./...` passes.
 - [x] `go vet ./...` passes.
 - [x] `git diff --check` passes.
-- [ ] `git status --short --branch` is clean except for intentional launch docs.
-- [ ] `git ls-remote --heads origin main` shows the expected remote branch before assuming GitHub has the current code.
+- [x] `git status --short --branch` is clean except for ignored local validation output.
+- [x] `git ls-remote --heads origin main` shows the expected remote branch before assuming GitHub has the current code.
 - [x] No private feedback logs, local configs, screenshots, credentials, tokens, or private runtime state are tracked.
 - [x] Clean-clone serve-only RC smoke passes without running `setup`, LaunchAgent, Tailscale Serve, `git push`, `git tag`, or visibility changes.
 - [ ] Repository owner explicitly approves each externally visible step: commit, push, visibility change, release tag, and public announcement.
