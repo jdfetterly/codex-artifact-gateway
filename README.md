@@ -18,6 +18,15 @@ The boring solution is to upload the artifact somewhere. I do not want that to b
 
 Gateway keeps the artifact where it belongs: on the Mac that produced it. It gives trusted devices on your tailnet a private way to open the page, keep the page's client-side interactivity, and optionally leave feedback that is saved locally.
 
+## What Changes On The Phone
+
+Without Gateway, the phone usually gets stuck with a Mac-only `file:///Users/...` path or raw local HTML that it cannot reach. With Gateway, the same artifact opens as a private, rendered review page on the phone.
+
+| Without Gateway | With Gateway |
+| --- | --- |
+| Raw HTML on the phone. | Rendered through the private Gateway URL. |
+| <img src="docs/assets/raw-html-phone.png" alt="Phone showing raw HTML source for weekly-review.html" width="320"> | <img src="docs/assets/gateway-html-phone.png" alt="Phone showing the rendered Weekly Review artifact through Gateway" width="320"> |
+
 ## What It Does
 
 - Opens local Codex-generated HTML files from an iPhone, iPad, or trusted browser on your tailnet.
