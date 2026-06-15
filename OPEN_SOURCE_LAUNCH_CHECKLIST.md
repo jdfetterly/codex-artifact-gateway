@@ -13,7 +13,8 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] No private feedback logs, local configs, screenshots, credentials, tokens, or private runtime state are tracked.
 - [x] Clean-clone serve-only RC smoke passes without running `setup`, LaunchAgent, Tailscale Serve, `git push`, `git tag`, or visibility changes.
 - [x] Repository owner approved private readiness commits and pushes.
-- [ ] Repository owner explicitly approves each remaining externally visible step: visibility change, release tag, GitHub Release, Homebrew packaging, and public announcement.
+- [x] Repository owner explicitly approved the public visibility change.
+- [ ] Repository owner explicitly approves each remaining externally visible step: release tag, GitHub Release, Homebrew packaging, and public announcement.
 
 ## License
 
@@ -71,7 +72,8 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 
 ## GitHub Settings
 
-- [x] Repository is still private before final public approval.
+- [x] Repository stayed private until final public approval.
+- [x] Repository is now public after explicit owner approval.
 - [x] Set a concise repo description: `Private Tailscale gateway for opening local Codex-generated HTML artifacts from iPhone.`
 - [x] Add topics: `codex`, `go`, `html-artifacts`, `iphone`, `local-first`, `macos`, and `tailscale`.
 - [x] Confirm default branch is `main`.
@@ -79,8 +81,8 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] Discussions are disabled/deferred.
 - [x] Dependabot vulnerability alerts are enabled.
 - [ ] Review private vulnerability reporting in GitHub settings; current CLI/API check returned 404.
-- [ ] Decide whether to enable CodeQL/code scanning for Go; current CLI/API check confirmed code scanning is not enabled.
-- [ ] Decide repository visibility only after launch gates pass.
+- [x] Enable CodeQL/code scanning workflow for Go.
+- [x] Decide repository visibility only after launch gates pass.
 - [ ] Add branch protection later if the project starts accepting external contributions.
 - [x] Keep the repository private until the tracked-content scan and final docs review pass.
 
@@ -97,7 +99,7 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] `gitleaks detect --source . --redact` reports no leaks.
 - [x] Targeted tracked-content scan found no private paths, private Tailscale hostnames, tokens, private keys, feedback logs, local runtime configs, old scratch paths, or unredacted screenshot text. The only path-like match was the generic README feedback example path.
 - [x] GitHub CLI verified private repo status, description, topics, default branch, Issues enabled, Discussions disabled, and Dependabot vulnerability alerts enabled.
-- [ ] Human review still required for private vulnerability reporting, CodeQL/code scanning enablement or deferral, public visibility, tag, release, Homebrew packaging, and announcement.
+- [ ] Human review still required for private vulnerability reporting, release tag, GitHub Release, Homebrew packaging, and announcement.
 
 ## Release Roadmap
 
@@ -130,4 +132,4 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Do not make the repository public until the repository owner separately approves the visibility change after reviewing the pushed private remote.
+The repository was made public only after the repository owner separately approved the visibility change after reviewing the pushed private remote.
