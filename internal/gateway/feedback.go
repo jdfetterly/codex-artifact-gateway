@@ -25,16 +25,24 @@ func (s FeedbackStore) Append(entry FeedbackEntry) (string, error) {
 	if entry.CreatedAt.IsZero() {
 		entry.CreatedAt = time.Now()
 	}
-	if err := os.MkdirAll(s.Dir, 0o755); err != nil {
+	if err := os.MkdirAll(s.Dir, 0o700); err != nil {
+		return "", err
+	}
+	// #nosec G302 -- owner-only execute permission is required for the feedback directory.
+	if err := os.Chmod(s.Dir, 0o700); err != nil {
 		return "", err
 	}
 	name := entry.CreatedAt.Format("2006-01-02") + "-feedback.jsonl"
 	path := filepath.Join(s.Dir, name)
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	// #nosec G304 -- file name is generated from the current date inside the configured local feedback directory.
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
+	if err := os.Chmod(path, 0o600); err != nil {
+		return "", err
+	}
 	encoded, err := json.Marshal(entry)
 	if err != nil {
 		return "", err

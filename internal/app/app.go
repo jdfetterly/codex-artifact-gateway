@@ -392,6 +392,7 @@ func StableBinaryPath(home string) (string, error) {
 }
 
 func runCommand(name string, args ...string) (string, error) {
+	// #nosec G204 -- command names are fixed local launchctl/Tailscale CLI paths, not HTTP input.
 	cmd := exec.Command(name, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

@@ -8,11 +8,12 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] `go test ./...` passes.
 - [x] `go vet ./...` passes.
 - [x] `git diff --check` passes.
-- [x] `git status --short --branch` is clean except for ignored local validation output.
+- [x] Before the final evidence update, `git status --short --branch` was clean except for ignored local validation output.
 - [x] `git ls-remote --heads origin main` shows the expected remote branch before assuming GitHub has the current code.
 - [x] No private feedback logs, local configs, screenshots, credentials, tokens, or private runtime state are tracked.
 - [x] Clean-clone serve-only RC smoke passes without running `setup`, LaunchAgent, Tailscale Serve, `git push`, `git tag`, or visibility changes.
-- [ ] Repository owner explicitly approves each externally visible step: commit, push, visibility change, release tag, and public announcement.
+- [x] Repository owner approved private readiness commits and pushes.
+- [ ] Repository owner explicitly approves each remaining externally visible step: visibility change, release tag, GitHub Release, Homebrew packaging, and public announcement.
 
 ## License
 
@@ -32,13 +33,15 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 - [x] Confirm runtime listen address is loopback-only; reject `0.0.0.0`, LAN addresses, and missing-host binds.
 - [x] Confirm HTTP handlers enforce request body limits and server timeouts.
 - [x] Confirm `/health` does not expose private local paths.
-- [x] Run `gosec ./...` if available; if not installed, record that rather than adding tooling just for launch. `gosec` was not installed for this pass.
+- [x] Run `gosec ./...`; final scan passed with 0 issues after tightening local config, feedback, and LaunchAgent file permissions.
+- [x] Run `govulncheck ./...`; local Go `go1.25.7` reported reachable standard-library vulnerabilities, and patched `go1.25.11` validation passed with no vulnerabilities.
+- [x] Run `gitleaks detect --source . --redact`; no leaks found.
 - [x] Confirm dependency surface with `go list -m all`; v0.1 should stay standard-library-only unless a dependency removes real complexity.
 - [x] Do not add Tailscale Funnel, public tunnel, reverse proxy, `0.0.0.0`, arbitrary file serving, command execution, or feedback-as-approval behavior.
 
 ## RC Validation Evidence
 
-- [x] Commit tested: `a33641f`.
+- [x] RC smoke commit tested: `a33641f`.
 - [x] Clean clone path: `/private/tmp/codex-artifact-gateway-rc-20260613100237`.
 - [x] Smoke mode: `./codex-artifact-gateway serve --addr 127.0.0.1:8768 --root /private/tmp/codex-artifact-gateway-fixture-20260613100237/artifacts --feedback-dir /private/tmp/codex-artifact-gateway-fixture-20260613100237/feedback`.
 - [x] Verified local endpoints: `/health`, `/recent`, `/open`, `/view`, `/resolve`, `/api/feedback`.
@@ -68,14 +71,33 @@ Use this checklist to move Codex Artifact Gateway from local/private state towar
 
 ## GitHub Settings
 
-- [ ] Set a concise repo description.
-- [ ] Add topics such as `codex`, `tailscale`, `macos`, `iphone`, `local-first`, `html-artifacts`, and `go`.
+- [x] Repository is still private before final public approval.
+- [x] Set a concise repo description: `Private Tailscale gateway for opening local Codex-generated HTML artifacts from iPhone.`
+- [x] Add topics: `codex`, `go`, `html-artifacts`, `iphone`, `local-first`, `macos`, and `tailscale`.
+- [x] Confirm default branch is `main`.
+- [x] Issues are enabled for v0.1.
+- [x] Discussions are disabled/deferred.
+- [x] Dependabot vulnerability alerts are enabled.
+- [ ] Review private vulnerability reporting in GitHub settings; current CLI/API check returned 404.
+- [ ] Decide whether to enable CodeQL/code scanning for Go; current CLI/API check confirmed code scanning is not enabled.
 - [ ] Decide repository visibility only after launch gates pass.
-- [ ] Confirm default branch is `main`.
-- [ ] Decide whether Issues are open for v0.1; Discussions can wait.
-- [ ] Enable security advisories, Dependabot alerts, or code scanning if available.
 - [ ] Add branch protection later if the project starts accepting external contributions.
-- [ ] Keep the repository private until the tracked-content scan and final docs review pass.
+- [x] Keep the repository private until the tracked-content scan and final docs review pass.
+
+## Final Public Visibility Gate Evidence
+
+- [x] Final private gate tested from current working tree based on `ba87c33`.
+- [x] `go test ./...` passes on the local toolchain.
+- [x] `go vet ./...` passes on the local toolchain.
+- [x] `go list -m all` confirms the module remains standard-library-only.
+- [x] `git diff --check` passes.
+- [x] `govulncheck ./...` passes when run with patched Go `go1.25.11`.
+- [x] `gosec ./...` passes with no issues; seven `#nosec` comments document local-only command/config file access and owner-only directory permission repairs.
+- [x] Existing permissive config, feedback, LaunchAgent, and log paths are tightened on rerun to owner-only permissions.
+- [x] `gitleaks detect --source . --redact` reports no leaks.
+- [x] Targeted tracked-content scan found no private paths, private Tailscale hostnames, tokens, private keys, feedback logs, local runtime configs, old scratch paths, or unredacted screenshot text. The only path-like match was the generic README feedback example path.
+- [x] GitHub CLI verified private repo status, description, topics, default branch, Issues enabled, Discussions disabled, and Dependabot vulnerability alerts enabled.
+- [ ] Human review still required for private vulnerability reporting, CodeQL/code scanning enablement or deferral, public visibility, tag, release, Homebrew packaging, and announcement.
 
 ## Release Roadmap
 

@@ -51,15 +51,28 @@ func Plist(cfg Config) string {
 }
 
 func WritePlist(path string, cfg Config) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	plistDir := filepath.Dir(path)
+	if err := os.MkdirAll(plistDir, 0o700); err != nil {
+		return err
+	}
+	// #nosec G302 -- owner-only execute permission is required for the LaunchAgents directory.
+	if err := os.Chmod(plistDir, 0o700); err != nil {
 		return err
 	}
 	for _, logPath := range []string{cfg.StdoutPath, cfg.StderrPath} {
-		if err := os.MkdirAll(filepath.Dir(logPath), 0o755); err != nil {
+		logDir := filepath.Dir(logPath)
+		if err := os.MkdirAll(logDir, 0o700); err != nil {
+			return err
+		}
+		// #nosec G302 -- owner-only execute permission is required for log directories.
+		if err := os.Chmod(logDir, 0o700); err != nil {
 			return err
 		}
 	}
-	return os.WriteFile(path, []byte(Plist(cfg)), 0o644)
+	if err := os.WriteFile(path, []byte(Plist(cfg)), 0o600); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o600)
 }
 
 func (m Manager) Load(plistPath string) error {

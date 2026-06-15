@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestFeedbackStoreWritesJSONLEntry(t *testing.T) {
@@ -44,6 +45,68 @@ func TestFeedbackStoreWritesJSONLEntry(t *testing.T) {
 	}
 	if entry.CreatedAt.IsZero() {
 		t.Fatal("CreatedAt was not set")
+	}
+}
+
+func TestFeedbackStoreUsesPrivatePermissions(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "feedback")
+	store := FeedbackStore{Dir: dir}
+
+	written, err := store.Append(FeedbackEntry{
+		ArtifactPath: "/view/root/report.html",
+		Kind:         "looks_good",
+		Comment:      "Ready.",
+	})
+	if err != nil {
+		t.Fatalf("Append returned error: %v", err)
+	}
+	dirInfo, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("feedback dir mode = %#o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(written)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("feedback file mode = %#o, want 0600", got)
+	}
+}
+
+func TestFeedbackStoreRepairsPermissivePermissions(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "feedback")
+	store := FeedbackStore{Dir: dir}
+	existing := filepath.Join(dir, time.Now().Format("2006-01-02")+"-feedback.jsonl")
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(existing, []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	written, err := store.Append(FeedbackEntry{
+		ArtifactPath: "/view/root/report.html",
+		Kind:         "looks_good",
+	})
+	if err != nil {
+		t.Fatalf("Append returned error: %v", err)
+	}
+	dirInfo, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("feedback dir mode = %#o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(written)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("feedback file mode = %#o, want 0600", got)
 	}
 }
 

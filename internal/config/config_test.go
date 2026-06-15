@@ -71,3 +71,57 @@ func TestWriteCreatesParentDirectory(t *testing.T) {
 		t.Fatalf("expected parent directory to exist: %v", err)
 	}
 }
+
+func TestWriteUsesPrivateConfigPermissions(t *testing.T) {
+	home := t.TempDir()
+	path := ConfigPath(home)
+	cfg := Default(home, "/tmp/codex-artifact-gateway")
+
+	if err := Write(path, cfg); err != nil {
+		t.Fatalf("Write returned error: %v", err)
+	}
+	dirInfo, err := os.Stat(filepath.Dir(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("config dir mode = %#o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("config file mode = %#o, want 0600", got)
+	}
+}
+
+func TestWriteRepairsPermissiveConfigPermissions(t *testing.T) {
+	home := t.TempDir()
+	path := ConfigPath(home)
+	cfg := Default(home, "/tmp/codex-artifact-gateway")
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Write(path, cfg); err != nil {
+		t.Fatalf("Write returned error: %v", err)
+	}
+	dirInfo, err := os.Stat(filepath.Dir(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Fatalf("config dir mode = %#o, want 0700", got)
+	}
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fileInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("config file mode = %#o, want 0600", got)
+	}
+}

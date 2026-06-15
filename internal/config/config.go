@@ -54,6 +54,7 @@ func LogPath(home string, stream string) string {
 }
 
 func Read(path string) (Config, error) {
+	// #nosec G304 -- config path is a local CLI/config path, not HTTP input.
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, err
@@ -66,7 +67,12 @@ func Read(path string) (Config, error) {
 }
 
 func Write(path string, cfg Config) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	// #nosec G302 -- owner-only execute permission is required for app-owned directories.
+	if err := os.Chmod(dir, 0o700); err != nil {
 		return err
 	}
 	encoded, err := json.MarshalIndent(cfg, "", "  ")
@@ -74,5 +80,8 @@ func Write(path string, cfg Config) error {
 		return err
 	}
 	encoded = append(encoded, '\n')
-	return os.WriteFile(path, encoded, 0o644)
+	if err := os.WriteFile(path, encoded, 0o600); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o600)
 }

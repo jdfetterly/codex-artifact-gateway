@@ -31,6 +31,6 @@ Feedback logs may contain user-controlled text, URLs, browser metadata, and arti
 
 ## Reporting Issues
 
-Use GitHub Security Advisories for vulnerabilities once this project is public. Public GitHub issues are fine for non-sensitive bugs only.
+Use GitHub Security Advisories for vulnerabilities once this project is public and private vulnerability reporting is enabled. If private reporting is not available yet, open a public issue with only a non-sensitive summary and ask for a private reporting path. Public GitHub issues are fine for non-sensitive bugs only.
 
 Do not paste secrets, tokens, private keys, config files, feedback JSONL, Tailscale URLs, tailnet hostnames, `.ssh` paths, `.codex` paths, or screenshots containing private local paths into public issues. Redact local absolute paths and private artifact content before sharing diagnostics.

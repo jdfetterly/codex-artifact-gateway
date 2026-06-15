@@ -1,6 +1,8 @@
 package launchd
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -60,5 +62,79 @@ func TestManagerUsesBootstrapKickstartAndBootout(t *testing.T) {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing command %q in:\n%s", want, joined)
 		}
+	}
+}
+
+func TestWritePlistUsesPrivatePermissions(t *testing.T) {
+	home := t.TempDir()
+	path := filepath.Join(home, "Library", "LaunchAgents", "com.jdfetterly.codex-artifact-gateway.plist")
+	stdout := filepath.Join(home, "Library", "Logs", "codex-artifact-gateway.out.log")
+	stderr := filepath.Join(home, "Library", "Logs", "codex-artifact-gateway.err.log")
+
+	if err := WritePlist(path, Config{
+		Label:      "com.jdfetterly.codex-artifact-gateway",
+		Program:    filepath.Join(home, "codex-artifact-gateway"),
+		ConfigPath: filepath.Join(home, "config.json"),
+		StdoutPath: stdout,
+		StderrPath: stderr,
+	}); err != nil {
+		t.Fatalf("WritePlist returned error: %v", err)
+	}
+	for _, dir := range []string{filepath.Dir(path), filepath.Dir(stdout), filepath.Dir(stderr)} {
+		info, err := os.Stat(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o700 {
+			t.Fatalf("%s mode = %#o, want 0700", dir, got)
+		}
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("plist mode = %#o, want 0600", got)
+	}
+}
+
+func TestWritePlistRepairsPermissivePermissions(t *testing.T) {
+	home := t.TempDir()
+	path := filepath.Join(home, "Library", "LaunchAgents", "com.jdfetterly.codex-artifact-gateway.plist")
+	stdout := filepath.Join(home, "Library", "Logs", "codex-artifact-gateway.out.log")
+	stderr := filepath.Join(home, "Library", "Logs", "codex-artifact-gateway.err.log")
+
+	for _, dir := range []string{filepath.Dir(path), filepath.Dir(stdout), filepath.Dir(stderr)} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := WritePlist(path, Config{
+		Label:      "com.jdfetterly.codex-artifact-gateway",
+		Program:    filepath.Join(home, "codex-artifact-gateway"),
+		ConfigPath: filepath.Join(home, "config.json"),
+		StdoutPath: stdout,
+		StderrPath: stderr,
+	}); err != nil {
+		t.Fatalf("WritePlist returned error: %v", err)
+	}
+	for _, dir := range []string{filepath.Dir(path), filepath.Dir(stdout), filepath.Dir(stderr)} {
+		info, err := os.Stat(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o700 {
+			t.Fatalf("%s mode = %#o, want 0700", dir, got)
+		}
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("plist mode = %#o, want 0600", got)
 	}
 }

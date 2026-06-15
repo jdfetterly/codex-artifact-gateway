@@ -92,7 +92,7 @@ Gateway does not automatically rewrite every old `file:///...` link that already
 Prerequisites:
 
 - macOS.
-- Go 1.22 or newer.
+- Go 1.22 or newer. Use a current patched Go release.
 - Tailscale installed and signed in on the Mac.
 - Tailscale installed and signed in on the iPhone, iPad, or trusted device you want to use.
 
